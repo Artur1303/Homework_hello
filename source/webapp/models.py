@@ -22,6 +22,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Время создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Время изменения')
     publish_at = models.DateTimeField(verbose_name="Время публикации", blank=True, default=timezone.now)
+    like_count = models.IntegerField(verbose_name='Счетчик лайков', default=0)
 
     def save(self, **kwargs):
         if not self.publish_at:
@@ -30,6 +31,10 @@ class Article(models.Model):
             else:
                 self.publish_at = Article.objects.get(pk=self.pk).publish_at
         super().save(**kwargs)
+
+    def liked_by(self, user):
+        likes = self.likes.filter(user=user)
+        return likes.count() > 0
 
     def __str__(self):
         return "{}. {}".format(self.pk, self.title)
@@ -62,3 +67,27 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ArticleLike(models.Model):
+    user = models.ForeignKey(get_user_model(), related_name='article_like', verbose_name='Пользователь', on_delete=models.CASCADE)
+    article = models.ForeignKey('webapp.Article',on_delete=models.CASCADE, related_name='likes', verbose_name='Статья')
+
+    def __str__(self):
+        return f'{self.user.username} - {self.article.title}'
+
+    class Meta:
+        verbose_name = 'Лайк'
+        verbose_name_plural = 'Лайки статей'
+
+
+class CommentLike(models.Model):
+    user = models.ForeignKey(get_user_model(), related_name='comment_like', verbose_name='Пользователь', on_delete=models.CASCADE)
+    comment = models.ForeignKey('webapp.Comment', on_delete=models.CASCADE, related_name='likes', verbose_name='Коментарий')
+
+    def __str__(self):
+        return f'{self.user.username} - {self. comment.text}'
+
+    class Meta:
+        verbose_name = 'Лайк'
+        verbose_name_plural = 'Лайки коментврия'

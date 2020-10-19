@@ -1,5 +1,6 @@
 import json
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic.base import View
 
@@ -33,3 +34,33 @@ class ArticleCreateView(View):
             response.status_code = 400
             return response
 
+
+class ArticleDetailView(View):
+    def get(self, request, *args, **kwargs):
+        objects = get_object_or_404(Article, pk=kwargs['pk'])
+        slr = ArticleSerializer(objects)
+        return JsonResponse(slr.data, safe=False)
+
+
+class ArticleUpdateView(View):
+    def put(self, request, *args, **kwargs):
+        objects = get_object_or_404(Article, pk=kwargs['pk'])
+        data = json.loads(request.body)
+        slr = ArticleSerializer(instance=objects, data=data)
+        if slr.is_valid():
+            article = slr.save()
+            return JsonResponse(slr.data, safe=False)
+        else:
+            response = JsonResponse(slr.errors, safe=False)
+            response.status_code = 400
+            return response
+
+
+class ArticleDeleteView(View):
+    def delete(self, request, *args, **kwargs):
+        objects = get_object_or_404(Article, pk=kwargs['pk'])
+        objects.delete()
+        return JsonResponse({
+            'id': kwargs['pk']
+
+        })
